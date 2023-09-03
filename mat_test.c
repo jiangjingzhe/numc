@@ -60,13 +60,15 @@ void mul_test(void) {
   matrix *result = NULL;
   matrix *mat1 = NULL;
   matrix *mat2 = NULL;
-  CU_ASSERT_EQUAL(allocate_matrix(&result, 3, 3), 0);
-  CU_ASSERT_EQUAL(allocate_matrix(&mat1, 3, 3), 0);
-  CU_ASSERT_EQUAL(allocate_matrix(&mat2, 3, 3), 0);
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      set(mat1, i, j, i * 3 + j + 1);
-      set(mat2, i, j, i * 3 + j + 1);
+  CU_ASSERT_EQUAL(allocate_matrix(&result, 300, 400), 0);
+  CU_ASSERT_EQUAL(allocate_matrix(&mat1, 300, 300), 0);
+  CU_ASSERT_EQUAL(allocate_matrix(&mat2, 300, 400), 0);
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      //set(mat1, i, j, i * 3 + j + 1);
+      //set(mat2, i, j, i * 3 + j + 1);
+      set(mat1, i, j, 1);
+      set(mat2, i, j, 1);
     }
   }
   mul_matrix(result, mat1, mat2);
@@ -136,11 +138,11 @@ void pow_test(void) {
   set(mat, 0, 1, 1);
   set(mat, 1, 0, 1);
   set(mat, 1, 1, 0);
-  pow_matrix(result, mat, 3);
-  CU_ASSERT_EQUAL(get(result, 0, 0), 3);
-  CU_ASSERT_EQUAL(get(result, 0, 1), 2);
-  CU_ASSERT_EQUAL(get(result, 1, 0), 2);
-  CU_ASSERT_EQUAL(get(result, 1, 1), 1);
+  pow_matrix(result, mat, 5);
+  CU_ASSERT_EQUAL(get(result, 0, 0), 8);
+  CU_ASSERT_EQUAL(get(result, 0, 1), 5);
+  CU_ASSERT_EQUAL(get(result, 1, 0), 5);
+  CU_ASSERT_EQUAL(get(result, 1, 1), 3);
   pow_matrix(result, mat, 10);
   CU_ASSERT_EQUAL(get(result, 0, 0), 89);
   CU_ASSERT_EQUAL(get(result, 0, 1), 55);
