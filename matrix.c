@@ -326,7 +326,7 @@ int mul_matrix(matrix *result, matrix *mat1, matrix *mat2) {
     //break the mats
     memset(C, 0, m1r*m2c*sizeof(double));
 
-    //#pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2)
     for(int i=0; i<m1r/BLOCKSIZE*BLOCKSIZE; i+=BLOCKSIZE)
     {
         for(int j=0; j<m2c/BLOCKSIZE*BLOCKSIZE; j+=BLOCKSIZE)
@@ -392,7 +392,7 @@ int mul_matrix(matrix *result, matrix *mat1, matrix *mat2) {
         
     }
 
-    //#pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2)
     for(int i=0; i<m1r/BLOCKSIZE*BLOCKSIZE; i+=BLOCKSIZE)
     {
         for(int j=m2c/BLOCKSIZE*BLOCKSIZE; j<m2c; j++)
@@ -420,7 +420,7 @@ int mul_matrix(matrix *result, matrix *mat1, matrix *mat2) {
     }
 
 
-    //#pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2)
     for(int i=m1r/BLOCKSIZE*BLOCKSIZE; i<m1r;i++)
     {
         for(int j=0; j<m2c/BLOCKSIZE*BLOCKSIZE; j+=BLOCKSIZE)
@@ -475,7 +475,7 @@ int mul_matrix(matrix *result, matrix *mat1, matrix *mat2) {
         }
     }
 
-    //#pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2)
     for(int i=m1r/BLOCKSIZE*BLOCKSIZE;i<m1r;i++)
     {
         for(int j=m2c/BLOCKSIZE*BLOCKSIZE;j<m2r;j++)
