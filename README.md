@@ -5,6 +5,10 @@
 *同时由于我个人无法弄好dumbpy包所以无法完成pytest测试，所以我只能在test1.py程序中简单测试了一下，当然我进行了所有的cunit测试（由于我修改了部分测试代码，并没有设置其正确结果，所以你会看到有没有通过的测试），如果你有办法进行pytest，请告诉我！*
 
 Here's what I did in project 4:
+
+[toc]
+
+
 # 准备工作
 ## conda环境
 
@@ -130,6 +134,7 @@ hello:
 
 同理我们可以将mat1，mat2，result都看成这样2*2的矩阵
 所以
+
 mat1:
 | a11 | a12 |
 |----|----|
@@ -242,6 +247,138 @@ int pow_num(int x,int pow)
 }
 ```
 
-        
+但对于矩阵的计算我们并不能直接实现`temp=temp*temp`的计算需要有中间变量来处理，同时矩阵的复制是一件开销很大的事情，所以我们使用指针的方法，仅在开始保留result的位置，如果最后内存不一样只用进行一次`memcpy`，大大减小了开销。
+```c
+matrix** tt = malloc(sizeof(matrix*));
+    allocate_matrix(tt,mat->rows,mat->cols);
+    matrix* t = *tt;
+
+    matrix** pp = malloc(sizeof(matrix*));
+    allocate_matrix(pp,mat->rows,mat->cols);
+    matrix* p = *pp;
+
+    matrix* x = result;
+
+    memset(result->data,0,result->cols*result->rows*sizeof(double));
+
+    #pragma omp parallel for
+    for(int i=0; i<mat->rows;i++)
+    {
+        (result->data)[i+i*result->cols]=1.0;
+    }
+
+    memcpy(p->data,mat->data,mat->cols*mat->rows*sizeof(double));
+
+    while(pow)
+    {
+        if(pow%2!=0)
+        {
+            mul_matrix(t,result,p);
+            //memcpy(result->data,t->data,mat->cols*mat->rows*sizeof(double));
+            matrix* temp = result;
+            result = t;
+            t = temp;
+        }
+        mul_matrix(t,p,p);
+        //memcpy(p->data,t->data,mat->cols*mat->rows*sizeof(double));
+        matrix* temp = p;
+        p = t;
+        t = temp;
+        pow/=2;
+    }
+
+    if(result!=x)
+    memcpy(x->data,result->data,mat->cols*mat->rows*sizeof(double));
+
+    deallocate_matrix(*pp);
+    free(pp);
+
+    deallocate_matrix(*tt);
+    free(tt);
+
+    return 0;
+
+```
+
+# python-c接口
+以加法为例简单解释一下如何编写python-c接口
+主要的框架已经为你写好，你只需要完成matrix.c 中的函数接口就行。
+简单来说python中类都为PyObject，我们已经定义了Matrix61c（继承自PyObject）
+下面其实就是在操作PyObject和Matrix61c的转化。
+```c
+static PyObject *Matrix61c_add(Matrix61c* self, PyObject* args) {
+    /* TODO: YOUR CODE HERE */
+    //检查是不是Matrix61cType类型
+    if(!PyObject_TypeCheck(args, &Matrix61cType)) { 
+        PyErr_SetString(PyExc_TypeError, "Invalid arguments");
+        return NULL;
+    }
+    //将args转化为Matrix61c
+    Matrix61c* mat2 = (Matrix61c*) args;
+    //检查矩阵大小是否相等
+    if(!(self->mat->rows==mat2->mat->rows && self->mat->cols==mat2->mat->cols)) {
+        PyErr_SetString(PyExc_ValueError, "Incorrect number of elements in list");
+        return NULL;
+    }
+    //初始化wrap
+    Matrix61c* wrap = (Matrix61c*) Matrix61c_new(&Matrix61cType, NULL, NULL);
+    matrix* realMat1 = self->mat;
+    matrix* realMat2 = mat2->mat;
+    int rows1 = realMat1->rows;
+    int cols1 = realMat1->cols;
+
+    matrix** result = malloc(sizeof(matrix*)); // allocate matrix, allocate matrix61c object using new , get->shape 
+    allocate_matrix(result, rows1, cols1); 
+    add_matrix(*result, realMat1, realMat2); 
+
+    wrap->mat = *result;
+    wrap->shape = get_shape(rows1, cols1);
+    return (PyObject *) wrap;
+    //记得return（PyObject*类型）
+}
+```  
+
+## 操作符重载
+```c
+static PyNumberMethods Matrix61c_as_number = {
+    /* TODO: YOUR CODE HERE */
+    .nb_add = Matrix61c_add,
+    .nb_subtract = Matrix61c_sub,
+    .nb_multiply = Matrix61c_multiply,
+    .nb_power = Matrix61c_pow,
+    .nb_negative = Matrix61c_neg,
+    .nb_absolute = Matrix61c_abs,
+};
+```
+这样应该是重载了这几个操作符，但不知道为什么会waring，有知道的可以告诉我。
+
+## setup
+最后setup.py 直接模仿写一下进行，比较简单
+```python
+from distutils.core import setup, Extension
+import sysconfig
+
+def main():
+    CFLAGS = ['-g', '-Wall', '-std=c99', '-fopenmp', '-mavx', '-mfma', '-pthread', '-O3']
+    LDFLAGS = ['-fopenmp']
+    # Use the setup function we imported and set up the modules.
+    # You may find this reference helpful: https://docs.python.org/3.6/extending/building.html
+    # TODO: YOUR CODE HERE
+    modulel = Extension('numc', sources = ['numc.c','matrix.c'], extra_compile_args = CFLAGS, extra_link_args = LDFLAGS)
+    setup (
+        name='numc',
+        version='1.0',
+        description='numpy made by c',
+        author='jjz',
+        ext_modules=[modulel]
+    )
+
+if __name__ == "__main__":
+    main()
+
+```
+
+# 总结
+**这就是我的project4自己探索的全部内容了，希望能对你有所帮助，如果你有什么别的建议，欢迎告诉我。**
 
 -
